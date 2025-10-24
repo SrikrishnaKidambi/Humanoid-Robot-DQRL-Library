@@ -1,11 +1,32 @@
-# Humanoid-Robot-DQRL-Library
+##Humanoid-Robot-DQRL-Library
 
-## Run this command first
-pip install -r requirements.txt
+#This project provides a library for Deep Reinforcement Learning with a humanoid robot.
 
-pip install humanoid_walk
-## The above command is used to install the library
+It includes:
+- Module 1: Pose estimation from camera images
+- Module 2: PyBullet physics simulation environment
 
-To install dependencies use "pip install -e ." in the root folder that is parent of Testing folder.
+#Setup Instructions:
 
-The commands to use the library for module 1 is given in the test1.py file
+1) Clone the Repository:
+```
+git clone https://github.com/your-username/Humanoid-Robot-DQRL-Library.git
+cd Humanoid-Robot-DQRL-Library
+```
+
+2) Create a Virtual Environment:
+**Python Version Warning: This project requires mediapipe. It does not support Python 3.13 or newer.**
+Use Python 3.12, 3.11, or 3.10.
+Example: `py -3.12 -m venv venv`
+
+3) Activate the Environment:
+Windows: `.\venv\Scripts\activate`
+Linux/macOS: `source venv/bin/activate`
+
+4) Install Dependencies:
+`pip install numpy opencv-python mediapipe gymnasium pybullet`
+
+5) Install custom library ( humanoid_library )
+From the project root, run this command:
+`pip install -e .`
+This makes sure our humanoid_library is visible when called through other files and testing scripts.

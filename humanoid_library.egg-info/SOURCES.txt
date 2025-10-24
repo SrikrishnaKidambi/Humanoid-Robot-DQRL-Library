@@ -9,3 +9,4 @@ humanoid_library.egg-info/top_level.txt
 humanoid_library/pose_estimation/__init__.py
 humanoid_library/pose_estimation/imgAcquisition.py
 humanoid_library/pose_estimation/keyPointExtraction.py
+humanoid_library/pose_estimation/kinematicConversion.py
