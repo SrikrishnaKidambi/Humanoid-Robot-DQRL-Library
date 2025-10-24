@@ -3,7 +3,7 @@
 ## Run this command first
 pip install -r requirements.txt
 
-pip intall humanoid_walk
+pip install humanoid_walk
 ## The above command is used to install the library
 
 To install dependencies use "pip install -e ." in the root folder that is parent of Testing folder.
