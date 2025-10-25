@@ -1,6 +1,6 @@
-## Humanoid-Robot-DQRL-Library
+# Humanoid-Robot-DQRL-Library
 
-# This project provides a library for Deep Reinforcement Learning with a humanoid robot.
+### This project provides a library for Deep Reinforcement Learning with a humanoid robot.
 
 It includes:
 - Module 1: Pose estimation from camera images
