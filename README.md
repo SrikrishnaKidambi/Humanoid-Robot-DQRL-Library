@@ -6,7 +6,7 @@ It includes:
 - Module 1: Pose estimation from camera images
 - Module 2: PyBullet physics simulation environment
 
-#Setup Instructions:
+# Setup Instructions:
 
 1) Clone the Repository:
 ```
