@@ -73,9 +73,6 @@ def select_main_skeleton_multiple(extractor,image,save_path):
     # return main_skel
 
 
-# In kinematicConversion.py
-
-# In kinematicConversion.py
 
 def compute_joint_angles(skeleton):
     """

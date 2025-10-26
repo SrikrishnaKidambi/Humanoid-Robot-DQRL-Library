@@ -99,7 +99,9 @@ class PoseExtractor:
 
         # --- Save or display
         if save_path:
-            cv2.imwrite(save_path, cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR))
+            # Convert float image [0,1] back to uint8 [0,255] for saving
+            image_to_save = (output_image * 255).astype(np.uint8)
+            cv2.imwrite(save_path, cv2.cvtColor(image_to_save, cv2.COLOR_RGB2BGR))
             print(f"Skeleton overlay saved to: {save_path}")
         else:
             cv2.imshow("Skeleton Overlay", cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR))
