@@ -20,7 +20,7 @@ Use Python 3.12, 3.11, or 3.10.
 Example: `py -3.12 -m venv venv`
 
 3) Activate the Environment:
-Windows: `.\venv\Scripts\activate`
+Windows: `.venv\Scripts\activate`
 Linux/macOS: `source venv/bin/activate`
 
 4) Install Dependencies:
