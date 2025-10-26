@@ -15,8 +15,8 @@ def select_main_skeleton_multiple(extractor,image,save_path):
 
     if image.dtype != np.uint8:
         image = (image * 255).astype(np.uint8)
-    if image.shape[-1] == 3:
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    # if image.shape[-1] == 3:
+    #     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     # detect all the people
     results = yolo_model.predict(source=image, verbose=False)
     boxes = []

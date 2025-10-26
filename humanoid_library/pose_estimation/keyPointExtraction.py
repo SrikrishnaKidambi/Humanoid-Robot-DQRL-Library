@@ -61,6 +61,52 @@ class PoseExtractor:
         body25 = np.array(body25)
         return body25
     
+    # def draw_skeleton(self, image, skeleton_points, save_path):
+    #     """
+    #     Draw body 25-like skeleton on top of the original image (not black background).
+    #     """
+    #     # Make a copy of the original image to draw overlays
+    #     output_image = image.copy()
+    #     h, w, _ = output_image.shape
+
+    #     # Define approximate BODY25-like connections (with spine added)
+    #     connections = [
+    #         (0, 1), (1, 2), (2, 3), (3, 4),       # Right arm
+    #         (1, 5), (5, 6), (6, 7),               # Left arm
+    #         (1, 8), (8, 9), (9, 10), (10, 11),    # Right leg
+    #         (8, 12), (12, 13), (13, 14),          # Left leg
+    #         (0, 15), (15, 17),                    # Right head
+    #         (0, 16), (16, 18),                    # Left head
+    #         (14, 19), (19, 20), (14, 21),         # Left foot
+    #         (11, 22), (22, 23), (11, 24),         # Right foot
+    #         (1, 8)                                # Spine (neck → hip)
+    #     ]
+
+    #     # --- Draw bones (connections)
+    #     for start, end in connections:
+    #         x1, y1, c1 = skeleton_points[start]
+    #         x2, y2, c2 = skeleton_points[end]
+    #         if c1 > 0.3 and c2 > 0.3:
+    #             cv2.line(output_image, (int(x1 * w), int(y1 * h)),
+    #                      (int(x2 * w), int(y2 * h)), (0, 0, 255), 2)
+
+    #     # --- Draw joints (keypoints)
+    #     for i, (x, y, c) in enumerate(skeleton_points):
+    #         if c > 0.3:
+    #             cv2.circle(output_image, (int(x * w), int(y * h)), 5, (0, 255, 255), -1)
+    #             cv2.putText(output_image, str(i), (int(x * w) + 4, int(y * h) - 4),
+    #                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+
+    #     # --- Save or display
+    #     if save_path:
+    #         # Convert float image [0,1] back to uint8 [0,255] for saving
+    #         image_to_save = (output_image * 255).astype(np.uint8)
+    #         cv2.imwrite(save_path, image_to_save)
+    #         print(f"Skeleton overlay saved to: {save_path}")
+    #     else:
+    #         cv2.imshow("Skeleton Overlay", output_image)
+    #         cv2.waitKey(0)
+    #         cv2.destroyAllWindows()
     def draw_skeleton(self, image, skeleton_points, save_path):
         """
         Draw body 25-like skeleton on top of the original image (not black background).
@@ -88,7 +134,7 @@ class PoseExtractor:
             x2, y2, c2 = skeleton_points[end]
             if c1 > 0.3 and c2 > 0.3:
                 cv2.line(output_image, (int(x1 * w), int(y1 * h)),
-                         (int(x2 * w), int(y2 * h)), (0, 0, 255), 2)
+                        (int(x2 * w), int(y2 * h)), (0, 0, 255), 2)
 
         # --- Draw joints (keypoints)
         for i, (x, y, c) in enumerate(skeleton_points):
@@ -99,11 +145,18 @@ class PoseExtractor:
 
         # --- Save or display
         if save_path:
-            # Convert float image [0,1] back to uint8 [0,255] for saving
-            image_to_save = (output_image * 255).astype(np.uint8)
-            cv2.imwrite(save_path, cv2.cvtColor(image_to_save, cv2.COLOR_RGB2BGR))
+            # FIX: Check if image is already uint8, if not convert properly
+            if output_image.dtype == np.float32 or output_image.dtype == np.float64:
+                # Image is in [0,1] range, convert to [0,255]
+                image_to_save = (output_image * 255).astype(np.uint8)
+            else:
+                # Image is already uint8
+                image_to_save = output_image
+            
+            image_to_save = cv2.cvtColor(image_to_save, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(save_path, image_to_save)
             print(f"Skeleton overlay saved to: {save_path}")
         else:
-            cv2.imshow("Skeleton Overlay", cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR))
+            cv2.imshow("Skeleton Overlay", output_image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
