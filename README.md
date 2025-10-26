@@ -24,7 +24,7 @@ Windows: `.venv\Scripts\activate`
 Linux/macOS: `source venv/bin/activate`
 
 4) Install Dependencies:
-`pip install numpy ultralytics opencv-python mediapipe gymnasium pybullet`
+`pip install numpy ultralytics opencv-python mediapipe gymnasium pybullet ultralytics`
 
 5) Install custom library ( humanoid_library )
 From the project root, run this command:
