@@ -10,3 +10,5 @@ humanoid_library/pose_estimation/__init__.py
 humanoid_library/pose_estimation/imgAcquisition.py
 humanoid_library/pose_estimation/keyPointExtraction.py
 humanoid_library/pose_estimation/kinematicConversion.py
+humanoid_library/simulation/__init__.py
+humanoid_library/simulation/humanoid_env.py
