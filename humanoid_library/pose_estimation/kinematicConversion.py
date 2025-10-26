@@ -2,30 +2,75 @@ import numpy as np
 import cv2
 import mediapipe as mp
 from .keyPointExtraction import PoseExtractor
+from ultralytics import YOLO
 
-def select_main_skeleton_multiple(extractor,image,save_path, iterations=5):
+def select_main_skeleton_multiple(extractor,image,save_path):
     """
     Try out multiple iterations of drawing skeletons for multiple people in the image and pick the one with more area
     """
-    skeletons = []
-    for i in range(iterations):
-        skel = extractor.extract_keypoints(image)
-        if len(skel) > 0:
-            skeletons.append(skel)
 
-    if not skeletons:
+    # use yolo 8 for detecting multiple people in the image
+
+    yolo_model = YOLO("yolov8m.pt") # it is faster and small model
+
+    if image.dtype != np.uint8:
+        image = (image * 255).astype(np.uint8)
+    if image.shape[-1] == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    # detect all the people
+    results = yolo_model.predict(source=image, verbose=False)
+    boxes = []
+    for result in results:
+        if result.boxes is None:
+            continue
+        for box in result.boxes:
+            cls = int(box.cls)
+            if cls == 0:  # class 0 = 'person'
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                boxes.append((x1, y1, x2, y2))
+
+    if not boxes:
+        print("No person detected")
         return None
     
-    max_area, main_skel = 0 , None
+    main_box = max(boxes,key= lambda b: (b[2]-b[0])*(b[3]-b[1]))
 
-    for skel in skeletons:
-        x,y = skel[:,0], skel[:,1]
-        area = (x.max()-x.min()) * (y.max() - y.min())
-        if area > max_area:
-            max_area=area
-            main_skel = skel
-    extractor.draw_skeleton(image,main_skel,save_path)
-    return main_skel
+    #extract only the max bounded box guy
+    x1,y1,x2,y2 = main_box
+    person_crop = image[y1:y2,x1:x2]
+
+    skeleton = extractor.extract_keypoints(person_crop)
+    if skeleton is None:
+        print("Unable to find the pose")
+        return None
+    
+    # adjusting the coordinates in reference to the original image
+    skeleton[:,0] = (x1 + skeleton[:,0]*(x2-x1))/image.shape[1]
+    skeleton[:,1] = (y1 + skeleton[:,1]*(y2-y1))/image.shape[0]
+
+    extractor.draw_skeleton(image,skeleton,save_path)
+    return skeleton
+
+
+    # skeletons = []
+    # for i in range(iterations):
+    #     skel = extractor.extract_keypoints(image)
+    #     if len(skel) > 0:
+    #         skeletons.append(skel)
+
+    # if not skeletons:
+    #     return None
+    
+    # max_area, main_skel = 0 , None
+
+    # for skel in skeletons:
+    #     x,y = skel[:,0], skel[:,1]
+    #     area = (x.max()-x.min()) * (y.max() - y.min())
+    #     if area > max_area:
+    #         max_area=area
+    #         main_skel = skel
+    # extractor.draw_skeleton(image,main_skel,save_path)
+    # return main_skel
 
 
 
