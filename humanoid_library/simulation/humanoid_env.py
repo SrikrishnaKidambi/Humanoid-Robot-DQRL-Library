@@ -13,41 +13,34 @@ class HumanoidWalkEnv(gym.Env):
     metadata = {'render_modes': ['human', 'rgb_array'], 'render_fps': 50}
 
     def __init__(self, render_mode=None):
-            super().__init__()
+        super().__init__()
+        self.render_mode = render_mode
 
-            self.render_mode = render_mode
+        if render_mode == "human":
+            self.client = pybullet.connect(pybullet.GUI)
+        else:
+            self.client = pybullet.connect(pybullet.DIRECT)
 
-            if render_mode == "human":
-                self.client = pybullet.connect(pybullet.GUI)
-            else:
-                self.client = pybullet.connect(pybullet.DIRECT)
+        data_path = pybullet_data.getDataPath()
+        pybullet.setAdditionalSearchPath(data_path)
+        pybullet.setGravity(0, 0, -9.81, physicsClientId=self.client)
 
-            # 1. Set the search path
-            data_path = pybullet_data.getDataPath()
-            pybullet.setAdditionalSearchPath(data_path)
-            pybullet.setGravity(0, 0, -9.81, physicsClientId=self.client)
+        self.model_path = os.path.join(data_path, "mjcf", "humanoid_symmetric.xml") 
+        print(f"Model path set to: {self.model_path}")
+        self.humanoid_id = None
 
-            self.model_path = os.path.join(data_path, "mjcf", "humanoid_symmetric.xml") 
-            print(f"Model path set to: {self.model_path}")
-            self.humanoid_id = None
+        # --- Action and observation spaces ---
+        self.num_actions = 17
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(self.num_actions,), dtype=np.float32)
+        self.obs_dim = 58
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32)
 
-            # PyBullet humanoid has 17 actuated joints
-            self.num_actions = 17
-            self.action_space = spaces.Box(
-                low=-1.0, high=1.0,
-                shape=(self.num_actions,),
-                dtype=np.float32
-            )
+        # --- Add these attributes ---
+        self.state_dim = self.obs_dim
+        self.n_joints = NUM_JOINTS
 
-            self.obs_dim = 58 
-            self.observation_space = spaces.Box(
-                low=-np.inf, high=np.inf,
-                shape=(self.obs_dim,),
-                dtype=np.float32
-            )
-
-            self.step_counter = 0
-            self.max_steps = 1000
+        self.step_counter = 0
+        self.max_steps = 1000
 
 
     def _load_robot(self):
@@ -218,7 +211,7 @@ class HumanoidWalkEnv(gym.Env):
     def step(self, action):
         # Clip actions to safe torques
         action = np.clip(action, -1, 1)
-
+        self.last_action = action
         pybullet.setJointMotorControlArray(
             bodyUniqueId=self.humanoid_id,
             jointIndices=self.actuated_joint_indices[:self.num_actions],
@@ -242,17 +235,37 @@ class HumanoidWalkEnv(gym.Env):
 
 
     def _compute_reward(self, obs):
-        # Forward velocity reward from base linear velocity
-        vel = pybullet.getBaseVelocity(self.humanoid_id)[0][0]
-        r_vel = max(vel, 0)
+        # 1. Forward velocity
+        base_lin_vel, base_ang_vel = pybullet.getBaseVelocity(self.humanoid_id)
+        r_vel = max(base_lin_vel[0], 0.0)
 
-        # Alive bonus
-        r_live = 0.05
+        # 2. Uprightness
+        _, orn = pybullet.getBasePositionAndOrientation(self.humanoid_id)
+        rot_mat = pybullet.getMatrixFromQuaternion(orn)
+        torso_up = np.array([rot_mat[2], rot_mat[5], rot_mat[8]])
+        r_upright = np.dot(torso_up, np.array([0, 0, 1]))  # 1 if perfectly upright
 
-        # Energy penalty
-        torque_penalty = 0.001 * np.sum(np.square(obs[10:10+self.num_actions]))
+        # 3. Stability
+        r_stability = 1.0 - min(np.linalg.norm(base_ang_vel) / 5.0, 1.0)
 
-        return r_vel + r_live - torque_penalty
+        # 4. Alive bonus
+        r_live = 1.0
+
+        # 5. Energy cost (requires storing last action)
+        r_energy = np.sum(np.square(getattr(self, 'last_action', np.zeros(self.num_actions))))
+
+        # --- Combine all ---
+        w_v, w_u, w_s, w_l, w_e = 1.0, 0.6, 0.4, 0.2, 0.001
+        reward = (
+            w_v * r_vel +
+            w_u * r_upright +
+            w_s * r_stability +
+            w_l * r_live -
+            w_e * r_energy
+        )
+
+        return float(reward)
+
 
 
     def _check_termination(self, obs):

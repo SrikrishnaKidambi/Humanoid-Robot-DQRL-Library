@@ -17,8 +17,8 @@ if __name__ == "__main__":
     # --- MODULE 1: POSE ESTIMATION ---
     script_dir = os.path.dirname(__file__)
     # 1. Define image paths
-    image_path = os.path.join(script_dir, "People.jpg")
-    save_path = os.path.join(script_dir, "Output_Pose.jpg")
+    image_path = os.path.join(script_dir, "img1.jpg")
+    save_path = os.path.join(script_dir, "out_img1.jpg")
     
     print(f"Loading image from: {image_path}")
     image = load_image(image_path)
