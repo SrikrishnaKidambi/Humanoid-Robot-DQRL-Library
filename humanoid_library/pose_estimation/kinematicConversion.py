@@ -4,52 +4,60 @@ import mediapipe as mp
 from .keyPointExtraction import PoseExtractor
 from ultralytics import YOLO
 
-def select_main_skeleton_multiple(extractor,image,save_path):
+def select_main_skeleton_multiple(extractor, image, save_path):
     """
-    Try out multiple iterations of drawing skeletons for multiple people in the image and pick the one with more area
+    Detect multiple people, extract skeletons, and choose the first non-empty one
+    (prefers largest bounding boxes first).
     """
 
-    # use yolo 8 for detecting multiple people in the image
+    from ultralytics import YOLO
 
-    yolo_model = YOLO("yolov8m.pt") # it is faster and small model
+    yolo_model = YOLO("yolov8m.pt")
 
     if image.dtype != np.uint8:
         image = (image * 255).astype(np.uint8)
-    # if image.shape[-1] == 3:
-    #     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    # detect all the people
+
     results = yolo_model.predict(source=image, verbose=False)
     boxes = []
+
     for result in results:
         if result.boxes is None:
             continue
         for box in result.boxes:
             cls = int(box.cls)
-            if cls == 0:  # class 0 = 'person'
+            if cls == 0:  # 'person'
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 boxes.append((x1, y1, x2, y2))
+            else:
+                print("class: ", cls)
 
     if not boxes:
         print("No person detected")
         return None
-    
-    main_box = max(boxes,key= lambda b: (b[2]-b[0])*(b[3]-b[1]))
 
-    #extract only the max bounded box guy
-    x1,y1,x2,y2 = main_box
-    person_crop = image[y1:y2,x1:x2]
+    # sort by area (largest first)
+    boxes.sort(key=lambda b: (b[2]-b[0])*(b[3]-b[1]), reverse=True)
+    print(f"Detected {len(boxes)} person(s). Trying each until pose found...")
 
-    skeleton = extractor.extract_keypoints(person_crop)
-    if skeleton is None:
-        print("Unable to find the pose")
-        return None
-    
-    # adjusting the coordinates in reference to the original image
-    skeleton[:,0] = (x1 + skeleton[:,0]*(x2-x1))/image.shape[1]
-    skeleton[:,1] = (y1 + skeleton[:,1]*(y2-y1))/image.shape[0]
+    for i, (x1, y1, x2, y2) in enumerate(boxes):
+        person_crop = image[y1:y2, x1:x2]
+        skeleton = extractor.extract_keypoints(person_crop)
 
-    extractor.draw_skeleton(image,skeleton,save_path)
-    return skeleton
+        if skeleton is None or len(skeleton) == 0:
+            print(f"Person {i+1}: No pose detected, Trying next...")
+            continue
+
+        print(f"Pose found for person {i+1}")
+        # map coords back to original image
+        skeleton[:, 0] = (x1 + skeleton[:, 0] * (x2 - x1)) / image.shape[1]
+        skeleton[:, 1] = (y1 + skeleton[:, 1] * (y2 - y1)) / image.shape[0]
+
+        extractor.draw_skeleton(image, skeleton, save_path)
+        return skeleton
+
+    print("No valid skeleton found in any person box")
+    return None
+
 
 
     # skeletons = []
@@ -113,7 +121,7 @@ def compute_joint_angles(skeleton):
     # --- Calculate Relative Joint Angles ---
     
     # 1. R Hip
-    r_hip_angle = angle_between(v_spine_down, v_r_thigh)
+    r_hip_angle = -angle_between(v_spine_down, v_r_thigh)
     # 2. R Knee
     r_knee_angle = angle_between(v_r_thigh, v_r_calf)
     # 3. L Hip
@@ -137,10 +145,11 @@ def compute_joint_angles(skeleton):
     angles = np.array([
         r_hip_angle, r_knee_angle,
         l_hip_angle, l_knee_angle,
-        r_shoulder_angle, r_elbow_angle,
-        l_shoulder_angle, l_elbow_angle,
+        r_shoulder_angle, r_elbow_angle-90*np.pi/180,
+        l_shoulder_angle, l_elbow_angle-90*np.pi/180,
         spine_angle
     ], dtype=np.float32)
+    print(angles*180/np.pi)
 
     return angles
 

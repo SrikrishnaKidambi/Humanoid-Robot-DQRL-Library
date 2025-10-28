@@ -17,8 +17,8 @@ if __name__ == "__main__":
     # --- MODULE 1: POSE ESTIMATION ---
     script_dir = os.path.dirname(__file__)
     # 1. Define image paths
-    image_path = os.path.join(script_dir, "People.jpg")
-    save_path = os.path.join(script_dir, "Output_Pose.jpg")
+    image_path = os.path.join(script_dir, "./Evaluation/TestImages/img13.jpg")
+    save_path = os.path.join(script_dir, "./Evaluation/OutputImages/img13.jpg")
     
     print(f"Loading image from: {image_path}")
     image = load_image(image_path)
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # 3. Compute joint angles
     if main_skeleton is not None:
         initial_pose_vector = compute_joint_angles(main_skeleton)
-        print(f"Successfully computed joint angles: {initial_pose_vector}")
+        print(f"Successfully computed joint angles: {initial_pose_vector*180/np.pi}")
 
         # --- MODULE 2: SIMULATION ---
         
