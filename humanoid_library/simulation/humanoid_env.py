@@ -27,13 +27,11 @@ class HumanoidWalkEnv(gym.Env):
             pybullet.setAdditionalSearchPath(data_path)
             pybullet.setGravity(0, 0, -9.81, physicsClientId=self.client)
 
-            # 2. DEFINE THE CORRECT PATH
-            # The file is in 'humanoid/', not 'mjcf/'
-            self.model_path = os.path.join(data_path, "mjcf", "humanoid_symmetric.xml") # <-- THE FIX
+            self.model_path = os.path.join(data_path, "mjcf", "humanoid_symmetric.xml") 
             print(f"Model path set to: {self.model_path}")
             self.humanoid_id = None
 
-            # Actuated joints count (PyBullet humanoid has 17 actuated joints)
+            # PyBullet humanoid has 17 actuated joints
             self.num_actions = 17
             self.action_space = spaces.Box(
                 low=-1.0, high=1.0,
@@ -41,7 +39,6 @@ class HumanoidWalkEnv(gym.Env):
                 dtype=np.float32
             )
 
-            # Observations: joint angles + velocities + torso position + orientation
             self.obs_dim = 58 
             self.observation_space = spaces.Box(
                 low=-np.inf, high=np.inf,
@@ -54,15 +51,11 @@ class HumanoidWalkEnv(gym.Env):
 
 
     def _load_robot(self):
-        # 3. SIMPLIFIED AND CORRECT LOADING
-        # This will now find the file because the path is correct 
-        # and pybullet.setAdditionalSearchPath() was called in __init__
         safe_path = self.model_path.replace("\\", "/")
         try:
             print(f"ATTEMPTING TO LOAD MJCF FROM: {safe_path}")
             
-            # Make sure you are using loadMJCF and getting the [0] index
-            self.humanoid_id = pybullet.loadMJCF(safe_path, physicsClientId=self.client)[0] # <-- THE FIX
+            self.humanoid_id = pybullet.loadMJCF(safe_path, physicsClientId=self.client)[0] 
             
         except Exception as e:
             print(f"CRITICAL: Failed to load humanoid model from {self.model_path}")
@@ -70,7 +63,6 @@ class HumanoidWalkEnv(gym.Env):
 
 
     def _get_actuated_joints(self):
-        # This function is fine as-is, but will now work
         joint_info = [
             pybullet.getJointInfo(self.humanoid_id, i, physicsClientId=self.client)
             for i in range(pybullet.getNumJoints(self.humanoid_id, physicsClientId=self.client))
@@ -80,13 +72,13 @@ class HumanoidWalkEnv(gym.Env):
             if info[2] in (pybullet.JOINT_REVOLUTE, pybullet.JOINT_PRISMATIC)
         ]
         
-        # --- ADD THIS DEBUGGING CODE ---
+        
         print("--- DEBUG: ACTUATED JOINT ORDER ---")
         for i in self.actuated_joint_indices:
             name = pybullet.getJointInfo(self.humanoid_id, i)[1].decode('UTF-8')
             print(f"Index {i}: {name}")
         print("-----------------------------------")
-        # --- END DEBUGGING CODE ---
+        
 
     #absolute mapping to urdf angles and our returned vetor angles (9 angles between various joints)
     # def _apply_initial_pose(self, initial_pose):
@@ -143,7 +135,6 @@ class HumanoidWalkEnv(gym.Env):
     #                 physicsClientId=self.client
     #             )
 
-    # In humanoid_env.py
 
     def _apply_initial_pose(self, initial_pose):
         if initial_pose is not None:
@@ -152,8 +143,6 @@ class HumanoidWalkEnv(gym.Env):
                     f"Expected pose vector of length {NUM_JOINTS}, got {initial_pose.shape[0]}"
                 )
 
-            # --- FINAL MAPPING (9-AXIS) ---
-            # We map our 2D angles to the correct 3D joint axis (mostly 'y' for forward/back)
             joint_mapping = {
                 # Angle 0 (R Hip) -> 'right_hip_y' (Index 7)
                 0: 7,

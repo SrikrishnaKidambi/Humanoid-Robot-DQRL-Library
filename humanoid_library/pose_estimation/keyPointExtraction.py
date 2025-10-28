@@ -128,7 +128,7 @@ class PoseExtractor:
             (1, 8)                                # Spine (neck → hip)
         ]
 
-        # --- Draw bones (connections)
+        # Drawing bones
         for start, end in connections:
             x1, y1, c1 = skeleton_points[start]
             x2, y2, c2 = skeleton_points[end]
@@ -136,18 +136,18 @@ class PoseExtractor:
                 cv2.line(output_image, (int(x1 * w), int(y1 * h)),
                         (int(x2 * w), int(y2 * h)), (0, 0, 255), 2)
 
-        # --- Draw joints (keypoints)
+        # Drawing joints
         for i, (x, y, c) in enumerate(skeleton_points):
             if c > 0.3:
                 cv2.circle(output_image, (int(x * w), int(y * h)), 5, (0, 255, 255), -1)
                 cv2.putText(output_image, str(i), (int(x * w) + 4, int(y * h) - 4),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
 
-        # --- Save or display
+        
         if save_path:
-            # FIX: Check if image is already uint8, if not convert properly
+            
             if output_image.dtype == np.float32 or output_image.dtype == np.float64:
-                # Image is in [0,1] range, convert to [0,255]
+                # Convrsion 0,1 range back to 0,255
                 image_to_save = (output_image * 255).astype(np.uint8)
             else:
                 # Image is already uint8

@@ -92,7 +92,7 @@ def compute_joint_angles(skeleton):
         angle2 = np.arctan2(v2[1], v2[0])
         return angle2 - angle1
 
-    # --- Define Limb Vectors ---
+    # Limb vectors
     v_spine_up = get_vec(8, 1)     # MidHip -> Neck (our "up" reference)
     v_spine_down = -v_spine_up     # A vector pointing "down" the spine
     
