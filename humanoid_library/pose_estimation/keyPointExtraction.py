@@ -136,7 +136,7 @@ class PoseExtractor:
 
         # Drawing joints
         for i, (x, y, c) in enumerate(skeleton_points):
-            if c > 0.3:
+            if c > 0:
                 cv2.circle(output_image, (int(x * w), int(y * h)), 5, (0, 255, 255), -1)
                 cv2.putText(output_image, str(i), (int(x * w) + 4, int(y * h) - 4),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
