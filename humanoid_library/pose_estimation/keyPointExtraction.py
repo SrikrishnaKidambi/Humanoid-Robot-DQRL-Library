@@ -5,15 +5,15 @@ import mediapipe as mp
 class PoseExtractor:
     def __init__(self):
         self.pose = mp.solutions.pose
-        self.detector = self.pose.Pose(static_image_mode=True,
+        self.detector = self.pose.Pose(static_image_mode=False,
                                        model_complexity=2,
                                        enable_segmentation=False,
-                                       min_detection_confidence=0.5)
+                                       min_detection_confidence=0.4)
         
     def extract_keypoints(self,image):
         
         results = self.detector.process((image * 255).astype(np.uint8))
-
+        print("Mediapipe pose landmarks: ", results.pose_landmarks)
         if not results.pose_landmarks:
             return []
         
