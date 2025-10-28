@@ -123,8 +123,6 @@ class PoseExtractor:
             (8, 12), (12, 13), (13, 14),          # Left leg
             (0, 15), (15, 17),                    # Right head
             (0, 16), (16, 18),                    # Left head
-            (14, 19), (19, 20), (14, 21),         # Left foot
-            (11, 22), (22, 23), (11, 24),         # Right foot
             (1, 8)                                # Spine (neck → hip)
         ]
 
@@ -132,7 +130,7 @@ class PoseExtractor:
         for start, end in connections:
             x1, y1, c1 = skeleton_points[start]
             x2, y2, c2 = skeleton_points[end]
-            if c1 > 0.3 and c2 > 0.3:
+            if c1 > 0 and c2 > 0:
                 cv2.line(output_image, (int(x1 * w), int(y1 * h)),
                         (int(x2 * w), int(y2 * h)), (0, 0, 255), 2)
 
