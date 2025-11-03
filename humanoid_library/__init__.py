@@ -2,7 +2,9 @@ from .pose_estimation.imgAcquisition import load_image, preprocess_image
 from .pose_estimation.keyPointExtraction import PoseExtractor
 from .pose_estimation.kinematicConversion import select_main_skeleton_multiple, compute_joint_angles
 from .simulation.humanoid_env import HumanoidWalkEnv
-from .training.dqn_agent_class import DQNAgent, QNetwork
+# from .training.dqn_agent_class import DQNAgent, QNetwork
+from .training1.QAgent import DQNAgent
+from .training1.QNet_architecture import QNetwork
 
 __all__ = [
     # --- Pose Estimation ---
@@ -13,7 +15,7 @@ __all__ = [
     "HumanoidWalkEnv",
 
     # --- Training ---
-    "DQNAgent", "QNetwork"
+    "DQNAgent", "QNetwork",
 ]
 
 __version__ = "0.1.0"

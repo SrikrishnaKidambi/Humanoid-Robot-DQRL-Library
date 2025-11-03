@@ -46,7 +46,7 @@ class HumanoidWalkEnv(gym.Env):
     def _load_robot(self):
         safe_path = self.model_path.replace("\\", "/")
         try:
-            print(f"ATTEMPTING TO LOAD MJCF FROM: {safe_path}")
+            # print(f"ATTEMPTING TO LOAD MJCF FROM: {safe_path}")
             
             self.humanoid_id = pybullet.loadMJCF(safe_path, physicsClientId=self.client)[0] 
             
@@ -66,11 +66,7 @@ class HumanoidWalkEnv(gym.Env):
         ]
         
         
-        print("--- DEBUG: ACTUATED JOINT ORDER ---")
-        for i in self.actuated_joint_indices:
-            name = pybullet.getJointInfo(self.humanoid_id, i)[1].decode('UTF-8')
-            print(f"Index {i}: {name}")
-        print("-----------------------------------")
+        # p---------------------------------")
         
 
     #absolute mapping to urdf angles and our returned vetor angles (9 angles between various joints)
@@ -235,38 +231,44 @@ class HumanoidWalkEnv(gym.Env):
 
 
     def _compute_reward(self, obs):
-        # 1. Forward velocity
-        base_lin_vel, base_ang_vel = pybullet.getBaseVelocity(self.humanoid_id)
-        r_vel = max(base_lin_vel[0], 0.0)
+        """
+        Compute reward based on current state (obs) and last applied torques
 
-        # 2. Uprightness
-        _, orn = pybullet.getBasePositionAndOrientation(self.humanoid_id)
-        rot_mat = pybullet.getMatrixFromQuaternion(orn)
-        torso_up = np.array([rot_mat[2], rot_mat[5], rot_mat[8]])
-        r_upright = np.dot(torso_up, np.array([0, 0, 1]))  # 1 if perfectly upright
+        Reward formula:
+            R_t = w_vel * r_vel + w_live * r_live - w_energy * r_energy
+        """
+        
+        # Extract simulation data
+        base_lin_vel, base_ang_vel = pybullet.getBaseVelocity(self.humanoid_id,physicsClientId = self.client)
+        pos, orn = pybullet.getBasePositionAndOrientation(self.humanoid_id, physicsClientId=self.client)
+        z_height = pos[2]
 
-        # 3. Stability
-        r_stability = 1.0 - min(np.linalg.norm(base_ang_vel) / 5.0, 1.0)
+        # Forward velocity reward (positive x direction)
+        r_vel = max(base_lin_vel[0],0.0) 
+        # so if move +ve x then the x direction vel is positive x reward but if going in -ve x direction then the vel is -ve so reward is 0
 
-        # 4. Alive bonus
-        r_live = 1.0
+        height_threshold = 0.7
+        r_live = 1.0 if z_height > height_threshold else 0.0
+        # gives +ve 1 reward if height > threshold else the reward is 0 and this is live reward
 
-        # 5. Energy cost (requires storing last action)
         r_energy = np.sum(np.square(getattr(self, 'last_action', np.zeros(self.num_actions))))
+        # here it penalizes for large or abrupt torques for smooth and efficient motiion
+        # self.last_action has torques applied in prev step
+        # we do np.square so large torques get more penality than smaller ones
+        # so getattr ensures that if last_action don't exist then it sets all the action values to 0
+        
+        # defining the weights
+        w_vel = 1.0 # makes forward walking the main objective 
+        w_live = 0.2 # gives a small incentive for staying upright
+        w_energy = 0.001 # small penalty to encourage efficiency
 
-        # --- Combine all ---
-        w_v, w_u, w_s, w_l, w_e = 1.0, 0.6, 0.4, 0.2, 0.001
-        reward = (
-            w_v * r_vel +
-            w_u * r_upright +
-            w_s * r_stability +
-            w_l * r_live -
-            w_e * r_energy
-        )
+        # final reward
+        reward = (w_vel * r_vel) + (w_live * r_live) - (w_energy * r_energy)
+
+        if self._check_termination(obs):
+            reward -= 5.0
 
         return float(reward)
-
-
 
     def _check_termination(self, obs):
         z = obs[2]  # torso height
