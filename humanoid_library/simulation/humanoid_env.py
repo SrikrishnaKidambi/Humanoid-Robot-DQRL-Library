@@ -60,10 +60,22 @@ class HumanoidWalkEnv(gym.Env):
             pybullet.getJointInfo(self.humanoid_id, i, physicsClientId=self.client)
             for i in range(pybullet.getNumJoints(self.humanoid_id, physicsClientId=self.client))
         ]
-        self.actuated_joint_indices = [
-            i for i, info in enumerate(joint_info)
-            if info[2] in (pybullet.JOINT_REVOLUTE, pybullet.JOINT_PRISMATIC)
+
+        # 🔧 Instead of controlling all 17, pick the 9 corresponding joints
+        self.control_joint_indices = [
+            7,   # right_hip_y
+            9,   # right_knee
+            14,  # left_hip_y
+            16,  # left_knee
+            19,  # right_shoulder1
+            22,  # right_elbow
+            24,  # left_shoulder1
+            27,  # left_elbow
+            1    # abdomen_y (spine)
         ]
+
+        self.num_actions = len(self.control_joint_indices)  # 9
+        self.actuated_joint_indices = self.control_joint_indices
         
         
         # p---------------------------------")
@@ -168,17 +180,20 @@ class HumanoidWalkEnv(gym.Env):
 
 
     def _get_obs(self):
-        # Torso position + orientation (quaternion)
         pos, orn = pybullet.getBasePositionAndOrientation(self.humanoid_id)
-
-        # Joint angles + velocities
         joints = []
         for j in self.actuated_joint_indices:
             state = pybullet.getJointState(self.humanoid_id, j)
-            joints.extend([state[0], state[1]]) # position, velocity
-
+            joints.extend([state[0], state[1]])  # position, velocity
+    
         obs = np.array(list(pos) + list(orn) + joints, dtype=np.float32)
+    
+        # Pad to match 41 dims if shorter
+        if len(obs) < 41:
+            obs = np.pad(obs, (0, 41 - len(obs)), mode='constant')
+    
         return obs
+
 
 
     def reset(self, seed=None, options=None, initial_pose=None):
@@ -205,12 +220,18 @@ class HumanoidWalkEnv(gym.Env):
 
 
     def step(self, action):
-        # Clip actions to safe torques
+        # Clip and match action dimension
         action = np.clip(action, -1, 1)
-        self.last_action = action
+
+        if len(action) != len(self.control_joint_indices):
+            raise ValueError(
+                f"Action length mismatch: expected {len(self.control_joint_indices)}, got {len(action)}"
+            )
+
+        # 🔧 Apply torques to only these 9 controlled joints
         pybullet.setJointMotorControlArray(
             bodyUniqueId=self.humanoid_id,
-            jointIndices=self.actuated_joint_indices[:self.num_actions],
+            jointIndices=self.control_joint_indices,
             controlMode=pybullet.TORQUE_CONTROL,
             forces=action
         )
@@ -225,7 +246,7 @@ class HumanoidWalkEnv(gym.Env):
         info = {}
 
         if self.render_mode == "human":
-            time.sleep(1/self.metadata["render_fps"])
+            time.sleep(1 / self.metadata["render_fps"])
 
         return obs, reward, terminated, truncated, info
 
