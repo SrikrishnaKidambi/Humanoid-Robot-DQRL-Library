@@ -79,6 +79,7 @@ class DQNAgent:
         if random.random() < epsilon:
             action_idxs = np.random.randint(0,self.n_bins,size=(self.n_joints,))
             action_torques = self.torque_bins[action_idxs].cpu().numpy()
+            action_torques = action_torques * 100
             return action_idxs,action_torques
         else:
             #greedy: pick argmax per-joint from policy network
@@ -229,14 +230,24 @@ def train(
 if __name__=="__main__":
     #Basic hyperparams
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    state_dim = 41  # your env.obs_dim
+    state_dim = 25  
     n_joints = 9
     n_bins = 5
 
     env = HumanoidWalkEnv(render_mode =None)
-    agent = DQNAgent(state_dim=state_dim, n_joints=n_joints, n_bins=n_bins, device=device,
-                     lr=1e-4, gamma=0.99, batch_size=128, buffer_size=200000,
-                     min_replay_size=2000, target_update_freq=1000, tau=1.0)
+    agent = DQNAgent(
+        state_dim=state_dim, 
+        n_joints=n_joints, 
+        n_bins=n_bins, 
+        device=device,
+        lr=3e-4,              # Slightly higher learning rate
+        gamma=0.99,
+        batch_size=256,       # Larger batch for stability
+        buffer_size=500000,   # More memory
+        min_replay_size=5000, # More initial exploration
+        target_update_freq=500, # More frequent updates
+        tau=0.005             # Soft updates instead of hard
+    )
     
     #load or synthesize an initial pose library
     #to load it
@@ -252,9 +263,16 @@ if __name__=="__main__":
 
     #training begin
     start_time = time.time()
-    rewards = train(env, agent, initial_pose_library,
-                    episodes=2000, max_steps_per_episode=env.max_steps,
-                    start_epsilon=1.0, end_epsilon=0.05, epsilon_decay_steps=200000,
-                    log_interval=10,
-                    model_save_path='dqn_policy.pth')
+    rewards = train(
+        env, 
+        agent, 
+        initial_pose_library,
+        episodes=5000,                    # Much more episodes
+        max_steps_per_episode=2000,       # Longer episodes
+        start_epsilon=1.0,
+        end_epsilon=0.01,                 # Lower final epsilon
+        epsilon_decay_steps=1000000,      # Slower decay
+        log_interval=50,
+        model_save_path='dqn_policy.pth'
+    )
     print("Training finished in", time.time() - start_time)

@@ -29,7 +29,8 @@ class QNetwork(nn.Module):
         self.out = nn.Linear(512,self.total_actions) # output layer
 
         # discrete torque bins
-        self.torque_bins = torch.tensor([-1.0, -0.5, 0.0, 0.5, 1.0])
+        # self.torque_bins = torch.tensor([-1.0, -0.5, 0.0, 0.5, 1.0])
+        self.torque_bins = torch.tensor([-1.0, -0.66, -0.33, 0.0, 0.33, 0.66, 1.0])
 
     def forward(self,state):
         """

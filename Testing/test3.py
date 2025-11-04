@@ -37,7 +37,7 @@ if __name__ == "__main__":
     env = HumanoidWalkEnv(render_mode='human')
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    state_dim = 41
+    state_dim = 25
     n_joints = 9
     n_bins = 5
 
@@ -73,11 +73,12 @@ if __name__ == "__main__":
         full_action = np.zeros(env.num_actions, dtype=np.float32)
 
         # Assign torques safely to actuated joints
-        for i, joint_idx in enumerate(controlled_joint_indices):
-            print(f"{i} and {joint_idx}")
-            full_action[joint_idx] = torques_9[i]
+        # for i, joint_idx in enumerate(controlled_joint_indices):
+        #     print(f"{i} and {joint_idx}")
+        #     full_action[joint_idx] = torques_9[i]
 
-        obs, reward, terminated, truncated, info = env.step(full_action)
+        # obs, reward, terminated, truncated, info = env.step(full_action)
+        obs, reward, terminated, truncated, info = env.step(torques_9)
 
         if terminated or truncated:
             print(f"Step {step}: Episode ended. Resetting to initial pose.")
