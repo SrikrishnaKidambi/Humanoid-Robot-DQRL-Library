@@ -75,7 +75,7 @@ if __name__ == "__main__":
         # Assign torques safely to actuated joints
         for i, joint_idx in enumerate(controlled_joint_indices):
             print(f"{i} and {joint_idx}")
-            full_action[joint_idx] = torques_9[i]
+            full_action[joint_idx-1] = torques_9[i]
 
         obs, reward, terminated, truncated, info = env.step(full_action)
 
