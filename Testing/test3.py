@@ -14,8 +14,9 @@ from humanoid_library import (
 if __name__ == "__main__":
     # --- MODULE 1: POSE ESTIMATION ---
     script_dir = os.path.dirname(__file__)
-    image_path = os.path.join(script_dir, "img1.jpg")
-    save_path = os.path.join(script_dir, "out_img1.jpg")
+    # 1. Define image paths
+    image_path = os.path.join(script_dir, "./Evaluation/TestImages/img13.jpg")
+    save_path = os.path.join(script_dir, "./Evaluation/OutputImages/img13.jpg")
     
     print(f"Loading image from: {image_path}")
     image = load_image(image_path)
